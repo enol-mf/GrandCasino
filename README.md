@@ -59,7 +59,7 @@ El servidor de desarrollo del frontend redirige `/api` a `http://localhost:3000`
 
 ## Estructura del proyecto
 
-​```
+```text
 GrandCasino/
 ├── docker-compose.yml
 ├── .env.example
@@ -89,7 +89,7 @@ GrandCasino/
     │   ├── pages/             # Login, Register, Lobby, Admin, games/*
     │   └── styles/global.css
     └── public/cards/          # 54 imágenes PNG de cartas
-​```
+```
 
 ## Endpoints de la API
 
