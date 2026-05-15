@@ -59,6 +59,7 @@ El servidor de desarrollo del frontend redirige `/api` a `http://localhost:3000`
 
 ## Estructura del proyecto
 
+​```
 GrandCasino/
 ├── docker-compose.yml
 ├── .env.example
@@ -79,15 +80,16 @@ GrandCasino/
 │   │   └── utils/deck.js      # Creación de baraja, mezcla, valor de la mano
 │   └── db/init.sql            # Esquema + datos iniciales de promos
 └── frontend/
-├── Dockerfile             # Multi-stage: build con node → servir con nginx
-├── nginx.conf             # Fallback SPA + proxy /api + HTTPS
-├── src/
-│   ├── api/client.js      # Wrapper de fetch con credentials:include
-│   ├── context/AuthContext.jsx
-│   ├── components/        # Navbar, Card, ProtectedRoute, AdminRoute
-│   ├── pages/             # Login, Register, Lobby, Admin, games/*
-│   └── styles/global.css
-└── public/cards/          # 54 imágenes PNG de cartas
+    ├── Dockerfile             # Multi-stage: build con node → servir con nginx
+    ├── nginx.conf             # Fallback SPA + proxy /api + HTTPS
+    ├── src/
+    │   ├── api/client.js      # Wrapper de fetch con credentials:include
+    │   ├── context/AuthContext.jsx
+    │   ├── components/        # Navbar, Card, ProtectedRoute, AdminRoute
+    │   ├── pages/             # Login, Register, Lobby, Admin, games/*
+    │   └── styles/global.css
+    └── public/cards/          # 54 imágenes PNG de cartas
+​```
 
 ## Endpoints de la API
 
