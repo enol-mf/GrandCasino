@@ -1,113 +1,111 @@
 # GrandCasino
 
-A full-stack casino web app with Blackjack, Roulette, Slots, Plinko, Racing, and Crash. Built with Node.js + Express, React 18 + Vite, and MySQL 8, fully dockerized.
+Una aplicación web de casino full-stack con Blackjack, Ruleta, Tragaperras, Plinko, Carreras y Crash. Construida con Node.js + Express, React 18 + Vite y MySQL 8, totalmente dockerizada.
 
-## Requirements
+## Requisitos
 
 - Docker 24+
 - Docker Compose v2
 
-## Quick Start (WSL / Linux)
+## Inicio rápido (WSL / Linux)
 
 ```bash
 cp .env.example .env
-# Edit .env with your values
+# Edita .env con tus valores
 docker compose up --build
 ```
 
-Open [http://localhost](http://localhost).
+Abre [http://localhost](http://localhost).
 
-The first build takes a few minutes. MySQL health checks ensure the backend waits for the DB to be ready.
+La primera build tarda unos minutos. Los health checks de MySQL aseguran que el backend espere a que la base de datos esté lista.
 
-## Automated Setup (Linux server)
+## Instalación automatizada (servidor Linux)
 
 ```bash
 bash setup.sh
 ```
 
-The script handles `.env` generation with random passwords, phpMyAdmin auth, optional Let's Encrypt SSL, and starts all containers.
+El script se encarga de generar el `.env` con contraseñas aleatorias, la autenticación de phpMyAdmin, SSL opcional con Let's Encrypt e inicia todos los contenedores.
 
-## Default Credentials
+## Credenciales por defecto
 
-| Role  | Username | Password    | Starting Balance |
-|-------|----------|-------------|-----------------|
-| Admin | `admin`  | `Admin1234!` | 10,000 chips    |
+| Rol   | Usuario  | Contraseña   | Saldo inicial |
+|-------|----------|--------------|---------------|
+| Admin | `admin`  | `Admin1234!` | 10.000 fichas |
 
-The admin account is created automatically by the backend on first startup.
+La cuenta de administrador se crea automáticamente por el backend en el primer arranque.
 
-## Demo Promo Codes
+## Códigos promocionales de demo
 
-| Code         | Chips | Max Uses   | Expires     |
-|--------------|-------|------------|-------------|
-| `WELCOME500` | 500   | Unlimited  | Never       |
-| `BONUS100`   | 100   | 1 per user | Never       |
-| `GRAND2024`  | 250   | 10 total   | 2027-12-31  |
+| Código       | Fichas | Usos máximos   | Caducidad   |
+|--------------|--------|----------------|-------------|
+| `WELCOME500` | 500    | Ilimitados     | Nunca       |
+| `BONUS100`   | 100    | 1 por usuario  | Nunca       |
+| `GRAND2024`  | 250    | 10 en total    | 31-12-2027  |
 
-## Dev Mode (Vite hot-reload + dockerized backend/db)
+## Modo desarrollo (hot-reload de Vite + backend/db en Docker)
 
 ```bash
-# Start only backend and db via Docker
+# Arranca solo backend y db con Docker
 docker compose up db backend
 
-# In another terminal, run frontend locally
+# En otra terminal, ejecuta el frontend localmente
 cd frontend
 npm install
 npm run dev
 ```
 
-Frontend dev server proxies `/api` to `http://localhost:3000` (via `vite.config.js`).
+El servidor de desarrollo del frontend redirige `/api` a `http://localhost:3000` (vía `vite.config.js`).
 
-## Project Structure
+## Estructura del proyecto
 
-```
 GrandCasino/
 ├── docker-compose.yml
 ├── .env.example
-├── pma-nginx.conf          # nginx Basic Auth proxy for phpMyAdmin
-├── setup.sh                # Automated server setup script
+├── pma-nginx.conf          # Proxy nginx con Basic Auth para phpMyAdmin
+├── setup.sh                # Script de instalación automatizada
 ├── backend/
 │   ├── Dockerfile
 │   ├── src/
-│   │   ├── server.js          # Express app, session, rate limiting, seeding
-│   │   ├── db.js              # mysql2 connection pool
+│   │   ├── server.js          # App Express, sesiones, rate limiting, seeding
+│   │   ├── db.js              # Pool de conexiones mysql2
 │   │   ├── middleware/auth.js # requireAuth, requireAdmin
 │   │   ├── routes/
-│   │   │   ├── auth.js        # register, login, logout, me
+│   │   │   ├── auth.js        # registro, login, logout, me
 │   │   │   ├── balance.js     # GET /api/balance
-│   │   │   ├── games.js       # blackjack, plinko, roulette, slots, racing, crash
+│   │   │   ├── games.js       # blackjack, plinko, ruleta, tragaperras, carreras, crash
 │   │   │   ├── promo.js       # POST /api/promo/redeem
-│   │   │   └── admin.js       # promo codes CRUD + user management
-│   │   └── utils/deck.js      # Deck creation, shuffle, hand value
-│   └── db/init.sql            # Schema + promo seed data
+│   │   │   └── admin.js       # CRUD de códigos promo + gestión de usuarios
+│   │   └── utils/deck.js      # Creación de baraja, mezcla, valor de la mano
+│   └── db/init.sql            # Esquema + datos iniciales de promos
 └── frontend/
-    ├── Dockerfile             # Multi-stage: node build → nginx serve
-    ├── nginx.conf             # SPA fallback + /api proxy + HTTPS
-    ├── src/
-    │   ├── api/client.js      # fetch wrapper with credentials:include
-    │   ├── context/AuthContext.jsx
-    │   ├── components/        # Navbar, Card, ProtectedRoute, AdminRoute
-    │   ├── pages/             # Login, Register, Lobby, Admin, games/*
-    │   └── styles/global.css
-    └── public/cards/          # 54 PNG card images
-```
+├── Dockerfile             # Multi-stage: build con node → servir con nginx
+├── nginx.conf             # Fallback SPA + proxy /api + HTTPS
+├── src/
+│   ├── api/client.js      # Wrapper de fetch con credentials:include
+│   ├── context/AuthContext.jsx
+│   ├── components/        # Navbar, Card, ProtectedRoute, AdminRoute
+│   ├── pages/             # Login, Register, Lobby, Admin, games/*
+│   └── styles/global.css
+└── public/cards/          # 54 imágenes PNG de cartas
 
-## API Endpoints
+## Endpoints de la API
 
-### Auth
-| Method | Path | Description |
+### Autenticación
+| Método | Ruta | Descripción |
 |--------|------|-------------|
-| POST | `/api/register` | Create account |
-| POST | `/api/login` | Log in |
-| POST | `/api/logout` | Log out |
-| GET  | `/api/me` | Current user + balance |
+| POST | `/api/register` | Crear cuenta |
+| POST | `/api/login` | Iniciar sesión |
+| POST | `/api/logout` | Cerrar sesión |
+| GET  | `/api/me` | Usuario actual + saldo |
 
-### Balance
-| Method | Path | Description |
+### Saldo
+| Método | Ruta | Descripción |
 |--------|------|-------------|
-| GET | `/api/balance` | Get current balance |
+| GET | `/api/balance` | Obtener saldo actual |
 
-### Games
-| Method | Path | Body |
+### Juegos
+| Método | Ruta | Body |
 |--------|------|------|
 | POST | `/api/games/blackjack/start` | `{ bet }` |
 | POST | `/api/games/blackjack/action` | `{ action: "hit"\|"stand"\|"double" }` |
@@ -119,28 +117,28 @@ GrandCasino/
 | GET  | `/api/games/crash/state` | — |
 | POST | `/api/games/crash/cashout` | — |
 
-### Promo
-| Method | Path | Body |
+### Promociones
+| Método | Ruta | Body |
 |--------|------|------|
 | POST | `/api/promo/redeem` | `{ code }` |
 
-### Admin (requires is_admin)
-| Method | Path | Description |
+### Admin (requiere is_admin)
+| Método | Ruta | Descripción |
 |--------|------|-------------|
-| GET | `/api/admin/promo` | List all codes |
-| POST | `/api/admin/promo` | Create code |
-| PATCH | `/api/admin/promo/:id/toggle` | Enable/disable |
-| DELETE | `/api/admin/promo/:id` | Delete |
-| GET | `/api/admin/users` | List all users |
-| PATCH | `/api/admin/users/:id/balance` | Edit user balance |
+| GET | `/api/admin/promo` | Listar todos los códigos |
+| POST | `/api/admin/promo` | Crear código |
+| PATCH | `/api/admin/promo/:id/toggle` | Activar/desactivar |
+| DELETE | `/api/admin/promo/:id` | Eliminar |
+| GET | `/api/admin/users` | Listar todos los usuarios |
+| PATCH | `/api/admin/users/:id/balance` | Editar saldo de usuario |
 
-## Key Decisions
+## Decisiones clave
 
-- **Admin seeding**: Done in backend startup via bcrypt (not SQL) to avoid pre-computed hash issues.
-- **Game state on server**: All game logic (blackjack hand, crash point, plinko path) lives in `req.session` so the client cannot manipulate outcomes.
-- **Crash fairness**: The crash point is generated server-side before the round starts using a house-edge formula `(1 - 0.05) / random`. The client only polls the current multiplier.
-- **Plinko multiplier**: Decided on server using `crypto.randomInt`; the 8-row path determines the slot. Client only animates the provided path.
-- **Card images**: Served from `public/cards/` so Vite doesn't fingerprint them (needed for dynamic filename construction).
-- **`max_uses = 0`** means unlimited uses for a promo code.
-- **CORS + sessions**: `credentials: true` on both ends; cookies use `sameSite: 'lax'` in dev and `secure: true` in production.
-- **phpMyAdmin**: Protected by a separate nginx proxy with HTTP Basic Auth on port 8081. Not exposed directly.
+- **Seeding del admin**: se realiza en el arranque del backend mediante bcrypt (no en SQL) para evitar problemas con hashes precalculados.
+- **Estado del juego en el servidor**: toda la lógica del juego (mano de blackjack, punto de crash, recorrido de plinko) vive en `req.session` para que el cliente no pueda manipular los resultados.
+- **Equidad en Crash**: el punto de crash se genera en el servidor antes de iniciar la ronda usando una fórmula con ventaja para la casa `(1 - 0.05) / random`. El cliente solo consulta el multiplicador actual.
+- **Multiplicador de Plinko**: se decide en el servidor usando `crypto.randomInt`; el recorrido de 8 filas determina la casilla. El cliente solo anima el recorrido proporcionado.
+- **Imágenes de cartas**: se sirven desde `public/cards/` para que Vite no aplique fingerprinting (necesario para la construcción dinámica de nombres de archivo).
+- **`max_uses = 0`** significa usos ilimitados para un código promocional.
+- **CORS + sesiones**: `credentials: true` en ambos extremos; las cookies usan `sameSite: 'lax'` en desarrollo y `secure: true` en producción.
+- **phpMyAdmin**: protegido por un proxy nginx separado con HTTP Basic Auth en el puerto 8081. No se expone directamente.
