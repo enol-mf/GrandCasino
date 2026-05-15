@@ -1,0 +1,131 @@
+#!/bin/bash
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ENV_FILE="$SCRIPT_DIR/.env"
+
+# Valores por defecto
+CANTIDAD=10
+CHIPS=100
+PREFIJO="GRAND"
+LONGITUD=8
+EXPIRA=""
+
+usage() {
+    cat <<EOF
+Uso: $0 [opciones]
+
+Opciones:
+  -n CANTIDAD    Numero de codigos a generar       (defecto: 10)
+  -c CHIPS       Chips que da cada codigo          (defecto: 100)
+  -p PREFIJO     Prefijo del codigo                (defecto: GRAND)
+  -l LONGITUD    Longitud de la parte aleatoria    (defecto: 8)
+  -e FECHA       Fecha de expiracion YYYY-MM-DD    (defecto: sin expiracion)
+  -h             Mostrar esta ayuda
+
+Ejemplos:
+  $0 -n 50 -c 500 -p VERANO
+  $0 -n 20 -c 1000 -e 2026-12-31
+EOF
+    exit 0
+}
+
+while getopts "n:c:p:l:e:h" opt; do
+    case $opt in
+        n) CANTIDAD=$OPTARG ;;
+        c) CHIPS=$OPTARG ;;
+        p) PREFIJO=$OPTARG ;;
+        l) LONGITUD=$OPTARG ;;
+        e) EXPIRA=$OPTARG ;;
+        h) usage ;;
+        *) usage ;;
+    esac
+done
+
+# Validaciones
+if ! [[ "$CANTIDAD" =~ ^[0-9]+$ ]] || [[ "$CANTIDAD" -lt 1 ]]; then
+    echo "Error: -n debe ser un numero positivo" >&2; exit 1
+fi
+if ! [[ "$CHIPS" =~ ^[0-9]+$ ]] || [[ "$CHIPS" -lt 1 ]]; then
+    echo "Error: -c debe ser un numero positivo" >&2; exit 1
+fi
+if ! [[ "$LONGITUD" =~ ^[0-9]+$ ]] || [[ "$LONGITUD" -lt 4 ]]; then
+    echo "Error: -l debe ser al menos 4" >&2; exit 1
+fi
+if [[ -n "$EXPIRA" ]] && ! [[ "$EXPIRA" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+    echo "Error: -e debe tener formato YYYY-MM-DD" >&2; exit 1
+fi
+
+# Cargar credenciales del .env
+if [[ ! -f "$ENV_FILE" ]]; then
+    echo "Error: No se encuentra $ENV_FILE" >&2; exit 1
+fi
+
+MYSQL_USER=$(grep ^MYSQL_USER "$ENV_FILE" | cut -d= -f2)
+MYSQL_PASSWORD=$(grep ^MYSQL_PASSWORD "$ENV_FILE" | cut -d= -f2)
+MYSQL_DATABASE=$(grep ^MYSQL_DATABASE "$ENV_FILE" | cut -d= -f2)
+
+mysql_exec() {
+    sudo docker compose -f "$SCRIPT_DIR/docker-compose.yml" exec -T db \
+        mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" 2>/dev/null <<< "$1"
+}
+
+# Verificar que el contenedor de DB esta activo
+if ! sudo docker compose -f "$SCRIPT_DIR/docker-compose.yml" ps db | grep -q "healthy\|running"; then
+    echo "Error: El contenedor de la base de datos no esta en marcha" >&2; exit 1
+fi
+
+generar_codigo() {
+    local parte
+    parte=$(LC_ALL=C tr -dc 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789' < /dev/urandom | head -c "$LONGITUD")
+    echo "${PREFIJO}-${parte}"
+}
+
+# Construir el valor de expires_at para el INSERT
+if [[ -n "$EXPIRA" ]]; then
+    EXPIRES_SQL="'${EXPIRA} 23:59:59'"
+else
+    EXPIRES_SQL="NULL"
+fi
+
+echo ""
+echo "Generando $CANTIDAD codigos promocionales..."
+echo "  Chips por codigo : $CHIPS"
+echo "  Prefijo          : ${PREFIJO}-"
+echo "  Expiracion       : ${EXPIRA:-sin expiracion}"
+echo ""
+
+generados=0
+fallos=0
+codigos=()
+
+while [[ $generados -lt $CANTIDAD ]]; do
+    codigo=$(generar_codigo)
+
+    SQL="INSERT IGNORE INTO promo_codes (code, reward_chips, max_uses, expires_at, active)
+         VALUES ('$codigo', $CHIPS, 1, $EXPIRES_SQL, TRUE);
+         SELECT ROW_COUNT();"
+
+    filas=$(mysql_exec "$SQL" | tail -1)
+
+    if [[ "$filas" == "1" ]]; then
+        codigos+=("$codigo")
+        (( ++generados ))
+    else
+        (( ++fallos ))
+        if [[ $fallos -gt $((CANTIDAD * 5)) ]]; then
+            echo "Error: demasiadas colisiones generando codigos unicos" >&2; exit 1
+        fi
+    fi
+done
+
+echo "Codigos generados e insertados en la base de datos:"
+echo ""
+for c in "${codigos[@]}"; do
+    echo "  $c"
+done
+
+echo ""
+echo "Total: $generados codigos listos para usar"
+echo ""

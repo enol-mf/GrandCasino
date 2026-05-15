@@ -1,0 +1,21 @@
+# Entorno
+.env
+node_modules/
+dist/
+*.log
+.DS_Store
+
+# Certificados SSL y challenge ACME (sensible)
+certbot/
+
+# Contraseña de phpMyAdmin (sensible)
+pma-htpasswd
+
+# Claude Code
+.claude/
+
+# Carpeta de materiales de referencia (no es código del proyecto)
+materiales/
+
+# Archivo temporal roto
+frontend/{src
